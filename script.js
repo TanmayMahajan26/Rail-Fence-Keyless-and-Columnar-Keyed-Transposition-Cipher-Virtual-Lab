@@ -70,12 +70,10 @@ function initTheme() {
   document.documentElement.setAttribute('data-theme', state.theme);
   const toggleBtn = document.getElementById('themeToggleBtn');
   if (toggleBtn) {
-    toggleBtn.textContent = state.theme === 'dark' ? '☀️' : '🌙';
     toggleBtn.addEventListener('click', () => {
       state.theme = state.theme === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', state.theme);
       localStorage.setItem('vlab_theme', state.theme);
-      toggleBtn.textContent = state.theme === 'dark' ? '☀️' : '🌙';
     });
   }
 
@@ -106,12 +104,18 @@ function initNavigation() {
 
 function switchTab(tabId) {
   state.activeTab = tabId;
+  let activeText = '';
   document.querySelectorAll('.nav-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === tabId);
+    const isActive = b.dataset.tab === tabId;
+    b.classList.toggle('active', isActive);
+    if (isActive) activeText = b.textContent.trim();
   });
   document.querySelectorAll('.tab-pane').forEach(p => {
     p.classList.toggle('active', p.id === tabId);
   });
+  const breadcrumb = document.getElementById('activeBreadcrumb');
+  if (breadcrumb && activeText) breadcrumb.textContent = activeText;
+  
   if (tabId === 'permutation') {
     updatePermutationExplorer();
   }
@@ -315,9 +319,9 @@ function initRailFence() {
     if (state.rf.output) {
       navigator.clipboard.writeText(state.rf.output);
       const btn = document.getElementById('rfCopyBtn');
-      const orig = btn.textContent;
-      btn.textContent = '✅ Copied!';
-      setTimeout(() => btn.textContent = orig, 1500);
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      setTimeout(() => btn.innerHTML = orig, 1500);
     }
   });
 
@@ -454,9 +458,12 @@ function toggleRfPlay() {
   }
 }
 
+const playIconHtml = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+const pauseIconHtml = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+
 function playRf() {
   state.rf.isPlaying = true;
-  document.getElementById('rfPlayBtn').textContent = '⏸️';
+  document.getElementById('rfPlayIcon').innerHTML = pauseIconHtml;
   if (state.rf.currentStep >= state.rf.steps.length - 1) {
     state.rf.currentStep = -1;
   }
@@ -465,7 +472,7 @@ function playRf() {
 
 function pauseRf() {
   state.rf.isPlaying = false;
-  document.getElementById('rfPlayBtn').textContent = '▶️';
+  document.getElementById('rfPlayIcon').innerHTML = playIconHtml;
   if (state.rf.timer) clearTimeout(state.rf.timer);
 }
 
@@ -476,7 +483,7 @@ function advanceRfStep() {
     state.rf.timer = setTimeout(advanceRfStep, state.rf.speed);
   } else {
     pauseRf();
-    document.getElementById('rfNarratorText').textContent = '✅ Traversal complete! Full ciphertext produced.';
+    document.getElementById('rfNarratorText').textContent = 'Traversal complete! Full ciphertext produced.';
   }
 }
 
@@ -697,9 +704,9 @@ function initColumnar() {
     if (state.col.output) {
       navigator.clipboard.writeText(state.col.output);
       const btn = document.getElementById('colCopyBtn');
-      const orig = btn.textContent;
-      btn.textContent = '✅ Copied!';
-      setTimeout(() => btn.textContent = orig, 1500);
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      setTimeout(() => btn.innerHTML = orig, 1500);
     }
   });
 
@@ -841,7 +848,7 @@ function toggleColPlay() {
 
 function playCol() {
   state.col.isPlaying = true;
-  document.getElementById('colPlayBtn').textContent = '⏸️';
+  document.getElementById('colPlayIcon').innerHTML = pauseIconHtml;
   if (state.col.currentStep >= state.col.steps.length - 1) {
     state.col.currentStep = -1;
   }
@@ -850,7 +857,7 @@ function playCol() {
 
 function pauseCol() {
   state.col.isPlaying = false;
-  document.getElementById('colPlayBtn').textContent = '▶️';
+  document.getElementById('colPlayIcon').innerHTML = playIconHtml;
   if (state.col.timer) clearTimeout(state.col.timer);
 }
 
@@ -861,7 +868,7 @@ function advanceColStep() {
     state.col.timer = setTimeout(advanceColStep, state.col.speed);
   } else {
     pauseCol();
-    document.getElementById('colNarratorText').textContent = '✅ Column extraction complete! Full ciphertext produced.';
+    document.getElementById('colNarratorText').textContent = 'Column extraction complete! Full ciphertext produced.';
   }
 }
 
@@ -1117,8 +1124,8 @@ function initTestCases() {
           <small style="color:var(--text-muted);">${tc.desc}</small>
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm" style="width:100%; justify-content:center;" onclick="loadTestCase(${idx})">
-        🚀 Load & Simulate
+      <button class="btn btn-secondary btn-sm" style="width:100%; justify-content:center; margin-top: 12px;" onclick="loadTestCase(${idx})">
+        Load Simulation
       </button>
     `;
     container.appendChild(card);
