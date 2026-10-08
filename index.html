@@ -1,19 +1,508 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Transposition Cipher Virtual Lab</title><link rel='stylesheet' href='style.css'></head><body>
-<header><div><h1>Virtual Cryptography Laboratory</h1><p>Rail Fence (Keyless) & Columnar Transposition Cipher</p></div></header>
-<div class='lab-layout'>
-<nav aria-label='Lab sections'><button data-tab='aim'>Aim</button><button data-tab='objective'>Objective</button><button data-tab='theory'>Theory</button><button data-tab='procedure'>Procedure</button><button data-tab='sim'>Simulation</button><button data-tab='quiz'>Quiz</button></nav>
-<main>
-<section id='aim' class='tab active'><h2>Aim</h2><div class='card'><p>To study how Rail Fence and Columnar transposition ciphers rearrange the positions of characters using an inverse permutation.</p></div></section>
-<section id='objective' class='tab'><h2>Objective</h2><div class='card'><ul><li>Understand the transposition cipher and the idea of an inverse permutation.</li><li>Observe the zig-zag row arrangement used by the Rail Fence cipher.</li><li>Study the keyword-based column arrangement used by the Columnar transposition cipher.</li><li>Use the simulation to produce and interpret ciphertext.</li></ul></div></section>
-<section id='theory' class='tab'><h2>Theory</h2><div class='card'><h3>Transposition Cipher</h3><p>A transposition cipher changes the order of characters in a message according to a permutation. The character set remains the same, but the positions are rearranged. Applying the inverse permutation restores the original message.</p></div><div class='grid2'><div class='card'><h3>Rail Fence — Keyless</h3><p>Characters are written in a zig-zag pattern across a user-selected number of rows. The ciphertext is obtained by reading the rows from top to bottom.</p><pre>Example: HELLOWORLD, 3 rows
-Row 1: H   O   L
-Row 2:  E L W R D
-Row 3:   L   O</pre></div><div class='card'><h3>Columnar Transposition Cipher</h3><p>Plaintext is written row-wise beneath a keyword. The columns are assigned ranks by alphabetical order of the keyword letters, then read in rank order to produce the ciphertext. Duplicate key letters are ranked from left to right.</p><pre>Key: Z E B R A
-Order: 5 3 2 4 1</pre></div></div></section>
-<section id='procedure' class='tab'><h2>Procedure</h2><div class='card'><h3>Transposition Cipher</h3><p>In both methods, write the plaintext into an arrangement, apply a position permutation, and read the resulting characters as ciphertext. To recover the plaintext, apply the inverse permutation.</p></div><div class='card'><h3>Rail Fence procedure</h3><ol><li>Enter the plaintext and select the required number of rows.</li><li>Write the characters diagonally down and up in a zig-zag pattern across the rows.</li><li>Read the characters row by row from top to bottom. This gives the ciphertext.</li><li>For recovery, mark the zig-zag positions, place the ciphertext row by row, and read along the zig-zag path.</li></ol><p><b>Example:</b> For <code>HELLOWORLD</code> with 3 rows, reading the arranged rows produces the ciphertext <code>HOLELWRDLO</code>.</p></div><div class='card'><h3>Columnar transposition procedure</h3><ol><li>Enter the plaintext and choose a keyword.</li><li>Write the plaintext from left to right in rows under the keyword. Do not add padding to the final row.</li><li>Number the keyword letters in alphabetical order from 1 onward. If letters repeat, number them from left to right.</li><li>Read each column from top to bottom in increasing rank order. The combined result is the ciphertext.</li><li>For recovery, split the ciphertext into the appropriate column lengths, place each part under its ranked keyword column, and read the grid row-wise.</li></ol><p><b>Example:</b> With plaintext <code>ATTACKATDAWN</code> and keyword <code>ZEBRA</code>, the ranked columns are <code>5 3 2 4 1</code>; reading them in rank order gives the ciphertext <code>CATTTANADAKW</code>.</p></div></section>
-<section id='sim' class='tab'><h2>Interactive Simulation</h2><div class='grid2'>
-<div class='card'><h3>Rail Fence Cipher</h3><label for='rfText'>Enter text</label><textarea id='rfText'>HELLOWORLD</textarea><label for='rfRails'>Number of Rows</label><input id='rfRails' type='number' min='2' step='1' value='2' aria-label='Number of rows'><small class='hint'>Choose 2 or more rows. The visualization updates when you process the text.</small><div class='actions'><button onclick='rfEncrypt()'>Encrypt</button><button onclick='rfDecrypt()'>Decrypt</button></div><h4>Visualization</h4><div id='rfViz' class='viz'></div><h4>Result</h4><output id='rfOut'></output></div>
-<div class='card'><h3>Columnar Transposition Cipher</h3><label for='colText'>Enter text</label><textarea id='colText'>ATTACKATDAWN</textarea><label for='colKey'>Choose a keyword</label><select id='colKey' aria-label='Choose a keyword'><option>ZEBRA</option><option>CRYPTO</option><option>SECRET</option><option>CIPHER</option><option>NETWORK</option><option>LAB</option></select><div class='actions'><button onclick='colEncrypt()'>Encrypt</button><button onclick='colDecrypt()'>Decrypt</button></div><h4>Permutation Grid</h4><div id='colViz' class='viz'></div><h4>Result</h4><output id='colOut'></output></div>
-</div><div class='card'><h3>Suggested Test Cases</h3><table><tr><th>Cipher</th><th>Input</th><th>Key</th><th>Expected ciphertext</th></tr><tr><td>Rail Fence</td><td>HELLOWORLD</td><td>2 rows</td><td>HLOOLELWRD</td></tr><tr><td>Rail Fence</td><td>HELLOWORLD</td><td>3 rows</td><td>HOLELWRDLO</td></tr><tr><td>Columnar</td><td>ATTACKATDAWN</td><td>ZEBRA</td><td>CATTTANADAKW</td></tr></table><small>Columnar example uses no padding; shorter final columns are handled automatically.</small></div></section>
-<section id='quiz' class='tab'><h2>Assessment</h2><div class='card'><div id='quizBox'></div><button onclick='gradeQuiz()'>Submit Quiz</button><output id='score'></output></div><div class='card'><h3>Viva Questions</h3><ol><li>What is a transposition cipher?</li><li>How does changing the number of rows change the Rail Fence permutation?</li><li>What determines the permutation in a Columnar transposition cipher?</li><li>How is the inverse permutation used to recover plaintext?</li><li>How are repeated letters in a keyword handled in this simulator?</li></ol></div></section>
-</main></div><footer>CSS TH ISE • Virtual Lab Development</footer><script src='script.js'></script></body></html>
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transposition Cipher Virtual Lab</title>
+  <meta name="description" content="Interactive virtual lab for Rail Fence and Columnar Transposition Ciphers. Observe permutation-based encryption and decryption.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-text">
+        <h1>Transposition Cipher Virtual Lab</h1>
+        <p>Rail Fence (Keyless) &amp; Columnar (Keyed) &mdash; Permutation Observation</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <button class="btn-icon" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle Theme">T</button>
+      <button class="btn-icon" id="resetLabBtn" title="Reset" aria-label="Reset Lab">R</button>
+    </div>
+  </header>
+
+  <div class="lab-layout">
+    <nav class="sidebar" aria-label="Lab navigation">
+      <div class="nav-label">Curriculum</div>
+      <button class="nav-btn active" data-tab="aim">Aim &amp; Objectives</button>
+      <button class="nav-btn" data-tab="theory">Theory</button>
+      <button class="nav-btn" data-tab="procedure">Procedure</button>
+
+      <div class="nav-label">Laboratory</div>
+      <button class="nav-btn" data-tab="simulation">Simulation</button>
+      <button class="nav-btn" data-tab="permutation">Permutation Explorer</button>
+      <button class="nav-btn" data-tab="testcases">Test Cases</button>
+
+      <div class="nav-label">Evaluation</div>
+      <button class="nav-btn" data-tab="quiz">Quiz</button>
+      <button class="nav-btn" data-tab="viva">Viva Voce</button>
+      <button class="nav-btn" data-tab="references">References</button>
+    </nav>
+
+    <main>
+
+      <!-- AIM -->
+      <section id="aim" class="tab-pane active">
+        <div class="section-header">
+          <h2>Aim &amp; Learning Objectives</h2>
+        </div>
+
+        <div class="card">
+          <h3>Experiment Aim</h3>
+          <p>
+            To study and observe position-based rearrangement (permutations) in classical cryptography using
+            the <strong>Rail Fence Cipher</strong> (keyless transposition) and the <strong>Columnar Transposition Cipher</strong> (keyed transposition),
+            and to demonstrate how inverse permutations restore the original plaintext during decryption.
+          </p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Learning Objectives</h3>
+            <ul>
+              <li>Understand the distinction between <strong>Substitution</strong> (altering symbol identity) and <strong>Transposition</strong> (altering symbol position).</li>
+              <li>Observe the zig-zag rail traversal and its cycle period: <code class="math-formula">T = 2(r - 1)</code>.</li>
+              <li>Learn how keyword alphabetical ranking dictates column extraction order.</li>
+              <li>Analyze handling of irregular (ragged) matrices without filler symbols.</li>
+              <li>Observe the forward permutation <code class="math-formula">pi(i)</code> and inverse <code class="math-formula">pi^-1(j)</code>.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>Curriculum Mapping</h3>
+            <div class="callout callout-purple">
+              <strong>Course:</strong> Cryptography and Network Security<br>
+              <strong>Topic:</strong> Classical Ciphers &amp; Transposition Techniques<br>
+              <strong>Prerequisites:</strong> Basic permutations, modulo arithmetic, string manipulation.
+            </div>
+            <p style="color: var(--text-secondary); margin-top: 10px;">
+              Transposition ciphers preserve letter frequencies while destroying digram/trigram patterns.
+              They provide the diffusion component used in modern block ciphers like DES (P-Boxes) and AES (ShiftRows).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- THEORY -->
+      <section id="theory" class="tab-pane">
+        <div class="section-header">
+          <h2>Theory</h2>
+        </div>
+
+        <div class="card">
+          <h3>1. Transposition Ciphers &amp; Permutation Theory</h3>
+          <p>
+            In a transposition cipher, message symbols are unchanged but their positions are permuted.
+            For a message of length <code class="math-formula">n</code>, encryption is a bijective mapping:
+          </p>
+          <div class="math-formula">
+            pi : {0, 1, ..., n-1} &rarr; {0, 1, ..., n-1} &nbsp; such that &nbsp; C[pi(i)] = P[i]
+          </div>
+          <p style="margin-top: 8px;">
+            Decryption uses the inverse permutation <code class="math-formula">pi^-1</code>:
+          </p>
+          <div class="math-formula">
+            P[i] = C[pi(i)] &hArr; P[pi^-1(j)] = C[j]
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>2. Rail Fence Cipher (Keyless)</h3>
+            <p style="color: var(--text-secondary);">
+              Characters are written in a zig-zag pattern across <code class="math-formula">r</code> horizontal rails.
+              The ciphertext is produced by reading rows from top to bottom.
+            </p>
+            <div class="callout">
+              <strong>Cycle Period:</strong> One full oscillation spans <code class="math-formula">2(r - 1)</code> characters.<br>
+              <strong>Row Assignment:</strong> Row for index <code class="math-formula">i</code> oscillates between 0 and <code class="math-formula">r-1</code>.
+            </div>
+            <h4>Example: HELLOWORLD, 3 Rows</h4>
+            <pre class="math-formula" style="white-space: pre; line-height: 1.8;">
+Row 1: H . . . O . . . L .  (Indices 0, 4, 8)
+Row 2: . E . L . W . R . D  (Indices 1, 3, 5, 7, 9)
+Row 3: . . L . . . O . . .  (Indices 2, 6)
+Ciphertext: H O L E L W R D L O</pre>
+          </div>
+
+          <div class="card">
+            <h3>3. Columnar Transposition (Keyed)</h3>
+            <p style="color: var(--text-secondary);">
+              Plaintext is written row-by-row into a grid beneath a keyword of length <code class="math-formula">m</code>.
+              Columns are read vertically in alphabetical order of the keyword letters.
+            </p>
+            <div class="callout callout-amber">
+              <strong>Key Ranking:</strong> ZEBRA &rarr; A(1), B(2), E(3), R(4), Z(5).<br>
+              <strong>Duplicate Rule:</strong> Repeated letters (e.g. BALLOON) are ranked left to right.
+            </div>
+            <h4>Ragged Columns</h4>
+            <p style="color: var(--text-secondary); font-size: 0.88rem;">
+              When <code class="math-formula">n</code> is not a multiple of <code class="math-formula">m</code>,
+              the first <code class="math-formula">n mod m</code> columns have <code class="math-formula">ceil(n/m)</code> rows
+              and the rest have one fewer. Decryption must account for these unequal heights.
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>4. Security Properties</h3>
+          <p style="color: var(--text-secondary);">
+            Since transposition does not substitute characters, single-letter frequencies match natural language.
+            However, digram and trigram patterns are disrupted. Vulnerabilities include:
+          </p>
+          <ul style="padding-left: 20px; margin-top: 8px; color: var(--text-secondary); line-height: 1.8;">
+            <li><strong>Brute Force:</strong> For Rail Fence with small row counts, trying values 2&ndash;10 quickly reveals plaintext.</li>
+            <li><strong>Anagramming:</strong> Sliding columns to find common digrams reconstructs the permutation without the keyword.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- PROCEDURE -->
+      <section id="procedure" class="tab-pane">
+        <div class="section-header">
+          <h2>Procedure</h2>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Rail Fence</h3>
+            <h4>Encryption</h4>
+            <ol>
+              <li>Clean plaintext: remove spaces/symbols, convert to uppercase.</li>
+              <li>Initialize <code class="math-formula">r</code> empty row buffers.</li>
+              <li>Walk characters diagonally down (row 0 to r-1) then up (r-1 to 0), repeating.</li>
+              <li>Concatenate rows top-to-bottom to produce ciphertext.</li>
+            </ol>
+            <h4>Decryption</h4>
+            <ol>
+              <li>Compute the zig-zag coordinate trail for length <code class="math-formula">n</code>.</li>
+              <li>Count how many characters belong to each row.</li>
+              <li>Slice ciphertext into row-sized segments.</li>
+              <li>Re-traverse the zig-zag path, pulling from each row buffer in order.</li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <h3>Columnar Transposition</h3>
+            <h4>Encryption</h4>
+            <ol>
+              <li>Clean plaintext and keyword. Let key length = <code class="math-formula">m</code>.</li>
+              <li>Rank keyword letters alphabetically (ties: left to right).</li>
+              <li>Write plaintext row-by-row into a <code class="math-formula">ceil(n/m) x m</code> grid.</li>
+              <li>Read columns top-to-bottom in rank order.</li>
+            </ol>
+            <h4>Decryption</h4>
+            <ol>
+              <li>Compute each column's height (full vs. short columns).</li>
+              <li>Allocate ciphertext slices to columns in rank order.</li>
+              <li>Read the reconstructed grid row-by-row.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Lab Workflow</h3>
+          <div class="callout">
+            <strong>Step 1:</strong> Go to the Simulation tab.<br>
+            <strong>Step 2:</strong> Pick Rail Fence or Columnar.<br>
+            <strong>Step 3:</strong> Enter a message and set parameters (rows or keyword).<br>
+            <strong>Step 4:</strong> Use playback controls to step through the permutation.<br>
+            <strong>Step 5:</strong> Check the Permutation Explorer for the formal mapping table.
+          </div>
+        </div>
+      </section>
+
+      <!-- SIMULATION -->
+      <section id="simulation" class="tab-pane">
+        <div class="section-header">
+          <h2>Interactive Simulation</h2>
+        </div>
+
+        <div class="sim-nav">
+          <button class="sim-tab-btn active" id="simTabRfBtn">Rail Fence (Keyless)</button>
+          <button class="sim-tab-btn" id="simTabColBtn">Columnar (Keyed)</button>
+        </div>
+
+        <!-- Rail Fence Simulator -->
+        <div id="simRfPanel">
+          <div class="grid-2">
+            <div class="card">
+              <h3>Rail Fence Configuration</h3>
+
+              <div class="form-group">
+                <div class="form-label">
+                  <label for="rfInput">Input Message</label>
+                  <small id="rfCharCount">10 chars</small>
+                </div>
+                <textarea id="rfInput" placeholder="Enter plaintext or ciphertext...">HELLOWORLD</textarea>
+              </div>
+
+              <div class="form-group">
+                <div class="form-label">
+                  <label for="rfRailsSlider">Number of Rails:</label>
+                  <span class="slider-val" id="rfRailsVal">3</span>
+                </div>
+                <div class="range-wrapper">
+                  <input type="range" id="rfRailsSlider" min="2" max="8" value="3">
+                </div>
+                <small style="color: var(--text-muted); display: block; margin-top: 6px;">
+                  Cycle period: <code class="math-formula" id="rfCycleInfo">T = 2(3-1) = 4</code>
+                </small>
+              </div>
+
+              <div class="actions-row">
+                <button class="btn btn-primary" id="rfEncryptBtn">Encrypt</button>
+                <button class="btn btn-purple" id="rfDecryptBtn">Decrypt</button>
+                <button class="btn btn-secondary" id="rfSwapBtn" title="Swap output to input">Swap</button>
+                <button class="btn btn-secondary" id="rfClearBtn">Clear</button>
+              </div>
+
+              <div class="form-group">
+                <div class="form-label">
+                  <label>Result</label>
+                  <button class="btn btn-secondary btn-sm" id="rfCopyBtn">Copy</button>
+                </div>
+                <div class="output-box" id="rfOutputBox">HOLELWRDLO</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Playback</h3>
+
+              <div class="playback-bar">
+                <div class="playback-controls">
+                  <button class="btn-icon" id="rfStepBackBtn" title="Step Back">&laquo;</button>
+                  <button class="btn-icon" id="rfPlayBtn" title="Play / Pause">&#9654;</button>
+                  <button class="btn-icon" id="rfStepFwdBtn" title="Step Forward">&raquo;</button>
+                  <button class="btn-icon" id="rfResetStepBtn" title="Reset">&#9632;</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 0.8rem; color: var(--text-secondary);">Speed:</span>
+                  <input type="range" id="rfSpeedSlider" min="200" max="1500" value="600" style="width: 90px;" title="Animation Speed">
+                </div>
+              </div>
+
+              <div class="status-narrator" id="rfStatusNarrator">
+                <span id="rfNarratorText">Ready. Click Encrypt or Play to trace the permutation.</span>
+              </div>
+
+              <h4>Permutation Summary</h4>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">
+                Maps input position <code class="math-formula">i</code> to output position <code class="math-formula">pi(i)</code>.
+              </p>
+              <div id="rfPermQuickBadges" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto;"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3>Zig-Zag Rail Arrangement</h3>
+              <span class="badge-tag" id="rfVizModeTag">Encryption</span>
+            </div>
+            <div class="viz-panel" id="rfVizPanel">
+              <div class="rail-container" id="rfRailContainer"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columnar Simulator -->
+        <div id="simColPanel" style="display: none;">
+          <div class="grid-2">
+            <div class="card">
+              <h3>Columnar Configuration</h3>
+
+              <div class="form-group">
+                <div class="form-label">
+                  <label for="colInput">Input Message</label>
+                  <small id="colCharCount">12 chars</small>
+                </div>
+                <textarea id="colInput" placeholder="Enter plaintext or ciphertext...">ATTACKATDAWN</textarea>
+              </div>
+
+              <div class="form-group">
+                <div class="form-label">
+                  <label for="colKeyInput">Keyword</label>
+                  <small id="colKeyLength">Length: 5</small>
+                </div>
+                <input type="text" id="colKeyInput" value="ZEBRA" placeholder="e.g. ZEBRA">
+
+                <div class="quick-tags">
+                  <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center;">Presets:</span>
+                  <button class="tag-btn" data-key="ZEBRA">ZEBRA</button>
+                  <button class="tag-btn" data-key="CRYPTO">CRYPTO</button>
+                  <button class="tag-btn" data-key="SECRET">SECRET</button>
+                  <button class="tag-btn" data-key="GERMAN">GERMAN</button>
+                  <button class="tag-btn" data-key="BALLOON">BALLOON</button>
+                  <button class="tag-btn" data-key="LAB">LAB</button>
+                </div>
+
+                <div class="key-chips-row" id="colKeyChipsRow"></div>
+              </div>
+
+              <div class="actions-row">
+                <button class="btn btn-primary" id="colEncryptBtn">Encrypt</button>
+                <button class="btn btn-purple" id="colDecryptBtn">Decrypt</button>
+                <button class="btn btn-secondary" id="colSwapBtn" title="Swap output to input">Swap</button>
+                <button class="btn btn-secondary" id="colClearBtn">Clear</button>
+              </div>
+
+              <div class="form-group">
+                <div class="form-label">
+                  <label>Result</label>
+                  <button class="btn btn-secondary btn-sm" id="colCopyBtn">Copy</button>
+                </div>
+                <div class="output-box" id="colOutputBox">CATTTANADAKW</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Playback</h3>
+
+              <div class="playback-bar">
+                <div class="playback-controls">
+                  <button class="btn-icon" id="colStepBackBtn" title="Step Back">&laquo;</button>
+                  <button class="btn-icon" id="colPlayBtn" title="Play / Pause">&#9654;</button>
+                  <button class="btn-icon" id="colStepFwdBtn" title="Step Forward">&raquo;</button>
+                  <button class="btn-icon" id="colResetStepBtn" title="Reset">&#9632;</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 0.8rem; color: var(--text-secondary);">Speed:</span>
+                  <input type="range" id="colSpeedSlider" min="200" max="1500" value="600" style="width: 90px;" title="Animation Speed">
+                </div>
+              </div>
+
+              <div class="status-narrator" id="colStatusNarrator">
+                <span id="colNarratorText">Ready. Click Encrypt or Play to trace the column permutation.</span>
+              </div>
+
+              <h4>Permutation Summary</h4>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">
+                Column rank order determines extraction sequence:
+              </p>
+              <div id="colPermQuickBadges" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto;"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3>Permutation Matrix</h3>
+              <span class="badge-tag" id="colVizModeTag">Encryption</span>
+            </div>
+            <div class="viz-panel" id="colVizPanel">
+              <div class="col-matrix-wrapper" id="colMatrixWrapper"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PERMUTATION EXPLORER -->
+      <section id="permutation" class="tab-pane">
+        <div class="section-header">
+          <h2>Permutation Explorer</h2>
+          <p>Cauchy notation, cycle decomposition, and full mapping table for the active cipher</p>
+        </div>
+
+        <div class="card">
+          <h3>Current Permutation</h3>
+          <p style="color: var(--text-secondary);">
+            A transposition cipher is fully determined by its permutation function pi.
+          </p>
+
+          <h4>Cauchy Two-Line Notation</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+            Top row: plaintext index. Bottom row: ciphertext destination.
+          </p>
+          <div class="cauchy-notation" id="cauchyNotationBox"></div>
+
+          <h4>Disjoint Cycle Decomposition</h4>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">
+            Showing where positions circulate under the permutation:
+          </p>
+          <div class="math-formula" id="cycleDecompositionBox" style="font-size: 1.05rem;"></div>
+        </div>
+
+        <div class="card">
+          <h3>Full Mapping Table</h3>
+          <div class="perm-table-container">
+            <table class="perm-table" id="fullPermTable">
+              <thead>
+                <tr>
+                  <th>Index (i)</th>
+                  <th>P[i]</th>
+                  <th>Path</th>
+                  <th>pi(i)</th>
+                  <th>C[pi(i)]</th>
+                </tr>
+              </thead>
+              <tbody id="fullPermTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TEST CASES -->
+      <section id="testcases" class="tab-pane">
+        <div class="section-header">
+          <h2>Test Cases</h2>
+          <p>Standard test vectors &mdash; click to load into the simulator</p>
+        </div>
+        <div class="grid-3" id="testCasesContainer"></div>
+      </section>
+
+      <!-- QUIZ -->
+      <section id="quiz" class="tab-pane">
+        <div class="section-header">
+          <div>
+            <h2>Self-Assessment Quiz</h2>
+          </div>
+          <button class="btn btn-secondary" id="resetQuizBtn">Reset</button>
+        </div>
+
+        <div class="card">
+          <div id="quizContainer"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 24px; flex-wrap: wrap; gap: 14px;">
+            <button class="btn btn-primary" id="submitQuizBtn">Submit Answers</button>
+            <div style="font-size: 1.2rem; font-weight: 800; font-family: var(--font-mono);" id="quizScoreDisplay"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIVA VOCE -->
+      <section id="viva" class="tab-pane">
+        <div class="section-header">
+          <h2>Viva Voce Questions</h2>
+        </div>
+        <div id="vivaContainer"></div>
+      </section>
+
+      <!-- REFERENCES -->
+      <section id="references" class="tab-pane">
+        <div class="section-header">
+          <h2>References</h2>
+        </div>
+
+        <div class="card">
+          <h3>Textbooks</h3>
+          <ol style="padding-left: 24px; line-height: 2; color: var(--text-secondary);">
+            <li>William Stallings, <em>Cryptography and Network Security: Principles and Practice</em>, 8th Ed., Pearson.</li>
+            <li>Behrouz A. Forouzan, <em>Cryptography and Network Security</em>, McGraw-Hill.</li>
+            <li>Alfred J. Menezes, Paul C. van Oorschot, Scott A. Vanstone, <em>Handbook of Applied Cryptography</em>, CRC Press.</li>
+            <li>Simon Singh, <em>The Code Book</em>, Anchor Books.</li>
+          </ol>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer>
+    <p>CSS ISEE &bull; Virtual Lab &bull; Transposition Cipher Experiment</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
