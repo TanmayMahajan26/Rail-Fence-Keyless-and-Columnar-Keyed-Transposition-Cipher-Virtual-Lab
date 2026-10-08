@@ -456,6 +456,7 @@ textarea { min-height: 80px; resize: vertical; }
 input[type="range"] { 
   flex: 1; 
   -webkit-appearance: none;
+  appearance: none;
   background: transparent;
   height: 4px;
   border-radius: 2px;
@@ -470,6 +471,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   height: 16px;
   width: 16px;
   border-radius: 50%;
