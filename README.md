@@ -15,13 +15,13 @@ The laboratory explores position-based permutations and their inverse restoratio
 - **Dual Cipher Modes**: Toggle between Rail Fence and Columnar Transposition.
 - **Dynamic Visualizations**:
   - Zig-zag rails with live character slot positioning and coordinate indicators.
-  - Rectangular permutation matrix with keyword headers, alphabetical rank badges, and ragged (padding-free) cell indicators.
+  - Rectangular permutation matrix with keyword headers, alphabetical rank badges, and dummy character ('X') padding indicators.
 - **Step-by-Step Playback Controller**:
   - Full playback controls: Play, Pause, Step Forward, Step Backward, Reset, and Speed Adjustment.
-  - **Live Status Narrator**: Real-time explanation of every transformation step.
+  - **Live Status Narrator**: Real-time explanation of every transformation step for both encryption and decryption.
 - **Interactive Controls**:
-  - Support for custom keywords and quick presets (ZEBRA, CRYPTO, SECRET, GERMAN, BALLOON, LAB).
-  - Instant roundtrip verification with Swap Result to Input button.
+  - Support for custom keywords and quick presets (ZEBRA, CRYPTO, SECRET, GERMAN, BALLOON).
+  - One-click Encrypt, Decrypt, and Clear.
   - Clipboard copy.
 
 ### 2. Permutation Explorer
@@ -30,7 +30,7 @@ The laboratory explores position-based permutations and their inverse restoratio
 - **Full Permutation Table**: Detailed mapping table displaying input index, character, transformation path, destination index, and ciphertext symbol.
 
 ### 3. Curriculum & Assessment Modules
-- **Aim & Learning Objectives**: Academic mapping to Cryptography and Information Security courses.
+- **Aim & Objectives**: Clear 2-point academic objectives covering both ciphers.
 - **Comprehensive Theory**: Mathematical formulation of permutations, inverse permutations, period equations, and cryptanalytic vulnerabilities.
 - **Benchmark Test Cases**: Pre-configured test vectors with instant Load & Simulate execution.
 - **Self-Assessment Quiz**: Conceptual multiple-choice questions with grading and explanations.
@@ -45,13 +45,12 @@ The laboratory explores position-based permutations and their inverse restoratio
 2. **Rail Fence Zig-Zag**:
    - Alternates downwards from row 0 to row r-1, then upwards to row 0.
    - Oscillation cycle period: T = 2(r - 1).
-3. **Columnar Key Ranking**:
-   - Letters in the keyword are sorted alphabetically to determine column extraction order.
-   - Duplicate letters in the keyword are ranked stably from left to right.
-4. **Ragged Grid (No Padding)**:
-   - For message length n and key length m, the grid has ceil(n/m) rows.
-   - The first n mod m columns have full height ceil(n/m); remaining columns have floor(n/m) rows.
-   - Decryption reconstructs these unequal column lengths without requiring extra filler characters.
+3. **Columnar Key Ranking & Deduplication**:
+   - Repeated letters in the secret keyword are removed to retain only the first occurrence (e.g. BALLOON → BALON).
+   - Unique keyword letters are sorted alphabetically to determine column extraction order.
+4. **Dummy Character Padding**:
+   - When message length n is not a multiple of key length m, dummy characters ('X') are appended to fill the grid completely (ceil(n/m) × m cells).
+   - Decryption reconstructs the grid from equal-height columns and strips the trailing dummy 'X' characters to recover the original plaintext.
 
 ---
 
@@ -61,10 +60,10 @@ The laboratory explores position-based permutations and their inverse restoratio
 | :--- | :--- | :--- | :--- | :--- |
 | **Rail Fence** | HELLOWORLD | 2 Rails | HLOOLELWRD | 2-row odd/even alternating split |
 | **Rail Fence** | HELLOWORLD | 3 Rails | HOLELWRDLO | Classic 3-rail bounce (T = 4) |
-| **Rail Fence** | DEFENDTHEEASTWALL | 4 Rails | DTAEETWFNDHLSEEA | 4-rail oscillation |
-| **Columnar** | ATTACKATDAWN | ZEBRA | CATTTANADAKW | 12 chars across 5 cols (uneven final row) |
-| **Columnar** | DEFENDTHEEASTWALLOFCASTLE | GERMAN | NALTEHWCDTTFEEELSDSOLFEAA | 25 chars across 6 cols |
-| **Columnar** | CRYPTOGRAPHYLABORATORY | BALLOON | RAOCRBYYPRPHAGARTYTOLO | Keyword with repeated letters L and O |
+| **Rail Fence** | DEFENDTHEEASTWALL | 4 Rails | DTTEDHSWFNEAALEEL | 4-rail oscillation |
+| **Columnar** | ATTACKATDAWN | ZEBRA | CAXTTXTANADXAKW | 12 chars across 5 cols, padded with X to 15 cells |
+| **Columnar** | DEFENDTHEEASTWALLOFCASTLE | GERMAN | NALTXEHWCXDTTFEEELSXDSOLXFEAAX | 25 chars across 6 cols, padded with X to 30 cells |
+| **Columnar** | CRYPTOGRAPHYLABORATORY | BALLOON | RGYRYCOHORYRLAXTPBOXPAATX | Keyword BALLOON deduplicated to BALON, padded with X to 25 cells |
 
 ---
 

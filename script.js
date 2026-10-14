@@ -42,6 +42,19 @@ const state = {
 // Utilities
 const clean = s => s ? s.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
 
+// Deduplicate keyword letters: BALLOON → BALON
+function deduplicateKey(key) {
+  const seen = new Set();
+  let result = '';
+  for (const ch of key) {
+    if (!seen.has(ch)) {
+      seen.add(ch);
+      result += ch;
+    }
+  }
+  return result;
+}
+
 const railColors = [
   'var(--rail-0)', 'var(--rail-1)', 'var(--rail-2)', 
   'var(--rail-3)', 'var(--rail-4)', 'var(--rail-5)', 
@@ -300,15 +313,6 @@ function initRailFence() {
     updatePermutationExplorer();
   });
 
-  document.getElementById('rfSwapBtn').addEventListener('click', () => {
-    inputEl.value = state.rf.output;
-    state.rf.mode = state.rf.mode === 'encrypt' ? 'decrypt' : 'encrypt';
-    document.getElementById('rfVizModeTag').textContent = state.rf.mode === 'encrypt' ? 
-      'Encryption (Zig-Zag Write → Row Read)' : 'Decryption (Reconstructing Zig-Zag from Rows)';
-    runRfSimulation();
-    updatePermutationExplorer();
-  });
-
   document.getElementById('rfClearBtn').addEventListener('click', () => {
     inputEl.value = '';
     countEl.textContent = '0 chars';
@@ -539,23 +543,30 @@ function computeColEncrypt(text, key) {
 
   const numCols = k.length;
   const numRows = Math.ceil(s.length / numCols);
+  const totalCells = numRows * numCols;
+  // Pad with 'X' dummy characters to fill the grid
+  const padded = s + 'X'.repeat(totalCells - s.length);
   const { ranks, readColOrder } = getKeyOrder(k);
 
   const grid = Array.from({ length: numRows }, () => Array(numCols).fill(null));
   const steps = [];
 
-  // Phase 1: Write row by row
-  for (let i = 0; i < s.length; i++) {
+  // Phase 1: Write row by row (including dummy chars)
+  for (let i = 0; i < padded.length; i++) {
     const r = Math.floor(i / numCols);
     const c = i % numCols;
-    grid[r][c] = { char: s[i], origIdx: i, row: r, col: c };
+    const isDummy = i >= s.length;
+    grid[r][c] = { char: padded[i], origIdx: i, row: r, col: c, isDummy };
     steps.push({
       phase: 'write',
       row: r,
       col: c,
-      char: s[i],
+      char: padded[i],
       origIdx: i,
-      narrative: `Phase 1 (Writing Grid): Placed '${s[i]}' (input pos ${i}) into Row ${r + 1}, Col ${c + 1} ('${k[c]}').`
+      isDummy,
+      narrative: isDummy
+        ? `Phase 1 (Padding): Placed dummy character 'X' at Row ${r + 1}, Col ${c + 1} ('${k[c]}').`
+        : `Phase 1 (Writing Grid): Placed '${padded[i]}' (input pos ${i}) into Row ${r + 1}, Col ${c + 1} ('${k[c]}').`
     });
   }
 
@@ -579,15 +590,16 @@ function computeColEncrypt(text, key) {
           colRank,
           origIdx: cell.origIdx,
           cipherIdx,
+          isDummy: cell.isDummy,
           accumulated: cipher,
-          narrative: `Phase 2 (Reading Columns): Reading Rank ${colRank} (Col '${k[col]}'): extracted '${cell.char}' (maps ${cell.origIdx} → cipher ${cipherIdx}).`
+          narrative: `Phase 2 (Reading Columns): Reading Rank ${colRank} (Col '${k[col]}'): extracted '${cell.char}'${cell.isDummy ? ' (dummy)' : ''} (maps ${cell.origIdx} → cipher ${cipherIdx}).`
         });
         cipherIdx++;
       }
     }
   }
 
-  return { cipher, map, grid, ranks, readColOrder, steps };
+  return { cipher, map, grid, ranks, readColOrder, steps, paddedLength: padded.length, originalLength: s.length };
 }
 
 function computeColDecrypt(cipherText, key) {
@@ -597,12 +609,15 @@ function computeColDecrypt(cipherText, key) {
 
   const m = k.length;
   const n = c.length;
+  // Since encryption pads to fill the grid, n should ideally be a multiple of m
   const numRows = Math.ceil(n / m);
-  const fullCols = n % m || m;
 
-  // Determine lengths of each column
-  const colLens = Array(m).fill(numRows - 1);
-  for (let i = 0; i < fullCols; i++) colLens[i] = numRows;
+  // If ciphertext length is not a multiple of m, pad with X to complete grid
+  const remainder = n % m;
+  const paddedC = remainder === 0 ? c : c + 'X'.repeat(m - remainder);
+
+  // All columns have equal height (because of dummy padding during encryption)
+  const colLens = Array(m).fill(numRows);
 
   const { ranks, readColOrder } = getKeyOrder(k);
   const cols = Array(m);
@@ -611,31 +626,61 @@ function computeColDecrypt(cipherText, key) {
   const steps = [];
   steps.push({
     phase: 'setup',
-    narrative: `Calculated column heights: First ${fullCols} columns have ${numRows} rows; remaining have ${numRows - 1} rows.`
+    narrative: `Grid dimensions: ${numRows} rows × ${m} columns. All columns have ${numRows} characters (grid was padded during encryption).`
   });
 
+  // Phase 1: Distribute ciphertext slices to columns in rank order
   for (let col of readColOrder) {
     const len = colLens[col];
-    cols[col] = c.slice(p, p + len).split('');
+    cols[col] = paddedC.slice(p, p + len).split('');
     steps.push({
       phase: 'allocate',
       col,
       keyChar: k[col],
       rank: ranks[col],
       chars: cols[col].join(''),
-      narrative: `Allocated ciphertext slice '${cols[col].join('')}' to Col ${col + 1} ('${k[col]}', Rank ${ranks[col]}).`
+      narrative: `Phase 1 (Column Allocation): Assigned slice '${cols[col].join('')}' to Col ${col + 1} ('${k[col]}', Rank ${ranks[col]}).`
     });
     p += len;
   }
 
-  let plain = '';
+  // Pre-calculate full raw text to detect stripped trailing X's
+  let rawText = '';
+  for (let r = 0; r < numRows; r++) {
+    for (let j = 0; j < m; j++) {
+      rawText += cols[j][r] || '';
+    }
+  }
+
+  // Remove trailing dummy 'X' characters that were added during padding
+  const plain = rawText.replace(/X+$/, '');
+  const plainLen = plain.length;
+
+  // Phase 2: Read grid row-by-row to reconstruct plaintext
+  let accumulated = '';
   const grid = [];
   for (let r = 0; r < numRows; r++) {
     const row = [];
     for (let j = 0; j < m; j++) {
       const ch = cols[j][r] || '';
-      row.push(ch ? { char: ch, row: r, col: j } : null);
-      if (ch) plain += ch;
+      const cellIdx = r * m + j;
+      const isDummy = cellIdx >= plainLen;
+      const cellObj = ch ? { char: ch, row: r, col: j, origIdx: cellIdx, isDummy } : null;
+      row.push(cellObj);
+      if (ch) {
+        if (!isDummy) accumulated += ch;
+        steps.push({
+          phase: 'reconstruct',
+          row: r,
+          col: j,
+          char: ch,
+          isDummy,
+          accumulated,
+          narrative: isDummy
+            ? `Phase 2 (Stripping Padding): Identified dummy character '${ch}' at Row ${r + 1}, Col ${j + 1} ('${k[j]}').`
+            : `Phase 2 (Reading Plaintext Row-by-Row): Read '${ch}' from Row ${r + 1}, Col ${j + 1} ('${k[j]}').`
+        });
+      }
     }
     grid.push(row);
   }
@@ -651,10 +696,15 @@ function initColumnar() {
 
   const updateCol = () => {
     const s = clean(inputEl.value);
-    const k = clean(keyEl.value);
+    const rawKey = clean(keyEl.value);
+    const k = deduplicateKey(rawKey);
     countEl.textContent = `${s.length} chars`;
     keyLenEl.textContent = `Length: ${k.length}`;
     state.col.key = k;
+    // Update the input field to show deduplicated key
+    if (rawKey !== k) {
+      keyEl.value = k;
+    }
     renderKeyChips(k);
     runColSimulation();
     updatePermutationExplorer();
@@ -680,16 +730,7 @@ function initColumnar() {
 
   document.getElementById('colDecryptBtn').addEventListener('click', () => {
     state.col.mode = 'decrypt';
-    document.getElementById('colVizModeTag').textContent = 'Decryption (Reconstructing Ragged Grid from Ranked Columns)';
-    runColSimulation();
-    updatePermutationExplorer();
-  });
-
-  document.getElementById('colSwapBtn').addEventListener('click', () => {
-    inputEl.value = state.col.output;
-    state.col.mode = state.col.mode === 'encrypt' ? 'decrypt' : 'encrypt';
-    document.getElementById('colVizModeTag').textContent = state.col.mode === 'encrypt' ?
-      'Encryption (Row Write → Ranked Column Read)' : 'Decryption (Reconstructing Ragged Grid from Ranked Columns)';
+    document.getElementById('colVizModeTag').textContent = 'Decryption (Reconstructing Grid from Ranked Columns)';
     runColSimulation();
     updatePermutationExplorer();
   });
@@ -801,12 +842,16 @@ function renderColMatrix(grid, key, ranks) {
       const td = document.createElement('td');
       td.id = `col-cell-${r}-${c}`;
       if (cell && cell.char) {
+        const isDummy = cell.isDummy || false;
         td.innerHTML = `<span class="cell-idx">${cell.origIdx !== undefined ? cell.origIdx : ''}</span>${cell.char}`;
-        td.title = `Row ${r + 1}, Col ${c + 1} (${key[c]}): '${cell.char}'`;
+        td.title = `Row ${r + 1}, Col ${c + 1} (${key[c]}): '${cell.char}'${isDummy ? ' (dummy)' : ''}`;
+        if (isDummy) {
+          td.classList.add('dummy-cell');
+        }
       } else {
         td.className = 'empty-ragged';
         td.innerHTML = '&mdash;';
-        td.title = 'Ragged cell (no character)';
+        td.title = 'Empty cell';
       }
       tr.appendChild(td);
     });
@@ -868,7 +913,9 @@ function advanceColStep() {
     state.col.timer = setTimeout(advanceColStep, state.col.speed);
   } else {
     pauseCol();
-    document.getElementById('colNarratorText').textContent = 'Column extraction complete! Full ciphertext produced.';
+    document.getElementById('colNarratorText').textContent = state.col.mode === 'encrypt'
+      ? 'Column extraction complete! Full ciphertext produced.'
+      : 'Grid reconstruction complete! Original plaintext recovered.';
   }
 }
 
@@ -893,7 +940,7 @@ function stepCol(dir) {
     const chip = document.getElementById(`key-chip-${current.col}`);
     if (chip) chip.classList.add('active-col');
 
-    if (current.phase === 'read') {
+    if (current.phase === 'read' || current.phase === 'allocate') {
       // Highlight entire column
       document.querySelectorAll(`[id^="col-cell-"][id$="-${current.col}"]`).forEach(td => {
         td.classList.add('active-col-cell');
@@ -935,6 +982,12 @@ function updatePermutationExplorer() {
     map = res.map;
     pathDesc = res.pat.map((row, col) => `Zig-zag Row ${row + 1}, Col ${col}`);
   } else {
+    if (!state.col.key) {
+      document.getElementById('cauchyNotationBox').innerHTML = '<em>Enter keyword in the simulation tab to view Cauchy notation.</em>';
+      document.getElementById('cycleDecompositionBox').innerHTML = '<em>No active permutation.</em>';
+      document.getElementById('fullPermTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;">No data available.</td></tr>';
+      return;
+    }
     const res = computeColEncrypt(s, state.col.key);
     map = res.map;
     const numCols = state.col.key.length;
@@ -1072,17 +1125,17 @@ const testCasesData = [
     input: 'DEFENDTHEEASTWALL',
     param: 4,
     paramLabel: '4 Rows',
-    expected: 'DTAEETWFNDHLSEEA',
+    expected: 'DTTEDHSWFNEAALEEL',
     desc: 'Military classic with 4 horizontal rails.'
   },
   {
     cipher: 'col',
-    title: 'Columnar (Ragged Columns)',
+    title: 'Columnar (With Dummy Padding)',
     input: 'ATTACKATDAWN',
     param: 'ZEBRA',
     paramLabel: 'Key: ZEBRA',
-    expected: 'CATTTANADAKW',
-    desc: 'Key length 5 with 12 characters. Unequal last row.'
+    expected: 'CAXTTXTANADXAKW',
+    desc: 'Key length 5 with 12 characters. Padded with X to fill 15 cells (3×5 grid).'
   },
   {
     cipher: 'col',
@@ -1090,17 +1143,17 @@ const testCasesData = [
     input: 'DEFENDTHEEASTWALLOFCASTLE',
     param: 'GERMAN',
     paramLabel: 'Key: GERMAN',
-    expected: 'NALTEHWCDTTFEEELSDSOLFEAA',
-    desc: 'Key length 6 across 25 message characters.'
+    expected: 'NALTXEHWCXDTTFEEELSXDSOLXFEAAX',
+    desc: 'Key length 6 across 25 characters. Padded with X to fill 30 cells (5×6 grid).'
   },
   {
     cipher: 'col',
-    title: 'Columnar (Duplicate Keys)',
+    title: 'Columnar (Deduplicated Key)',
     input: 'CRYPTOGRAPHYLABORATORY',
     param: 'BALLOON',
-    paramLabel: 'Key: BALLOON',
-    expected: 'RAOCRBYYPRPHAGARTYTOLO',
-    desc: 'Key with repeating letters (L, O) tested with left-to-right rule.'
+    paramLabel: 'Key: BALLOON → BALON',
+    expected: 'RGYRYCOHORYRLAXTPBOXPAATX',
+    desc: 'Key deduplicated from BALLOON to BALON. Padded with X to fill 25 cells (5×5 grid).'
   }
 ];
 
@@ -1147,10 +1200,11 @@ window.loadTestCase = function(idx) {
   } else {
     document.getElementById('simTabColBtn').click();
     document.getElementById('colInput').value = tc.input;
-    document.getElementById('colKeyInput').value = tc.param;
-    state.col.key = tc.param;
+    const dedupKey = deduplicateKey(clean(tc.param));
+    document.getElementById('colKeyInput').value = dedupKey;
+    state.col.key = dedupKey;
     state.col.mode = 'encrypt';
-    renderKeyChips(tc.param);
+    renderKeyChips(dedupKey);
     runColSimulation();
   }
 };
@@ -1184,15 +1238,15 @@ const quizQuestions = [
     exp: 'Starting at row 0, the trajectory descends through r - 1 steps to row r - 1, and ascends through r - 1 steps back to row 0. Thus the full period is 2(r - 1).'
   },
   {
-    q: 'In Columnar Transposition, if the secret keyword has duplicate letters (e.g. "BALLOON"), how are ties conventionally broken in this lab?',
+    q: 'In Columnar Transposition, if the secret keyword has duplicate letters (e.g. "BALLOON"), how are they handled in this lab?',
     opts: [
       'Randomly generated priority',
       'From left to right (earlier occurrence in the key takes precedence)',
       'From right to left',
-      'Repeated letters are discarded'
+      'Repeated letters are discarded (BALLOON becomes BALON)'
     ],
-    ans: 1,
-    exp: 'Standard cryptographic convention dictates stable sorting: duplicate letters are ranked in alphabetical order, with earlier left-to-right occurrences receiving lower rank numbers.'
+    ans: 3,
+    exp: 'In this lab, duplicate letters in the keyword are removed, keeping only the first occurrence of each letter. For example, BALLOON becomes BALON (5 unique letters), which determines the number of columns in the grid.'
   },
   {
     q: 'How does letter frequency analysis behave against a pure Transposition cipher?',
@@ -1206,15 +1260,15 @@ const quizQuestions = [
     exp: 'Because transposition merely permutes symbol positions without substituting any characters, unigram frequency counts (e.g. high frequency of E, T, A) remain completely unchanged.'
   },
   {
-    q: 'When decrypting a Columnar Transposition message of length n with key length m where n is not divisible by m, what is special about the grid?',
+    q: 'In Columnar Transposition, when the plaintext length n is not divisible by the key length m, how is the grid completed?',
     opts: [
-      'Padding with character X is strictly mandatory.',
-      'The grid has ragged/unequal column heights; the first (n mod m) columns have ceil(n/m) characters.',
-      'The message cannot be decrypted.',
+      'Dummy characters (X) are appended to fill the last row completely.',
+      'The grid has ragged/unequal column heights without any padding.',
+      'The message cannot be encrypted.',
       'The last row must be discarded.'
     ],
-    ans: 1,
-    exp: 'Ragged matrix reconstruction allocates ceil(n/m) characters to the first n mod m columns and floor(n/m) characters to remaining columns, allowing exact padding-free recovery.'
+    ans: 0,
+    exp: 'When the plaintext does not fill the last row completely, dummy characters (X) are appended to pad the plaintext so the grid is fully filled. During decryption, these trailing dummy characters are stripped to recover the original message.'
   },
   {
     q: 'Mathematically, why is decryption of any transposition cipher guaranteed if the permutation π is known?',
@@ -1333,7 +1387,7 @@ const vivaData = [
   },
   {
     q: '4. How are repeated letters in a Columnar Transposition keyword handled?',
-    a: 'When duplicate letters appear in a keyword (e.g., in "SECRET" or "BALLOON"), standard convention utilizes stable sorting: letters are sorted alphabetically, and ties between identical characters are resolved from left to right according to their index in the original key.'
+    a: 'When duplicate letters appear in a keyword (e.g., BALLOON), the repeated letters are removed to produce a deduplicated keyword (BALLOON → BALON). Only the first occurrence of each letter is retained. This deduplicated keyword determines the number of columns in the transposition grid.'
   },
   {
     q: '5. How can an eavesdropper break a simple Columnar Transposition cipher without brute-forcing all keys?',

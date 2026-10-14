@@ -822,6 +822,14 @@ input[type="range"]::-webkit-slider-thumb {
   color: rgba(255, 255, 255, 0.1);
 }
 
+.col-matrix td.dummy-cell {
+  background: rgba(255, 255, 255, 0.01);
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .col-matrix td.active-cell {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.4);
