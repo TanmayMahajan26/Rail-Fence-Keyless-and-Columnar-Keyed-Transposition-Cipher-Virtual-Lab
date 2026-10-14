@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="warm">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,7 +24,7 @@
       <div class="nav-label">Curriculum</div>
       <button class="nav-btn active" data-tab="aim">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
-        Aim &amp; Objectives
+        Aim
       </button>
       <button class="nav-btn" data-tab="theory">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
@@ -68,7 +68,7 @@
     <div class="main-wrapper">
       <header>
         <div class="header-breadcrumbs">
-          Transposition Cipher <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg> <span class="active" id="activeBreadcrumb">Aim &amp; Objectives</span>
+          Transposition Cipher <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg> <span class="active" id="activeBreadcrumb">Aim</span>
         </div>
         <div class="header-controls">
           <button class="btn-icon" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle Theme">
@@ -84,16 +84,16 @@
         <!-- AIM -->
         <section id="aim" class="tab-pane active">
           <div class="section-header">
-            <h2>Aim &amp; Learning Objectives</h2>
+            <h2>Aim</h2>
             <p>Fundamental transposition cryptography experiment</p>
           </div>
 
           <div class="card">
             <h3>Experiment Aim</h3>
-            <ol>
-              <li>To study and implement the <strong>Rail Fence Cipher</strong> (keyless transposition) by arranging plaintext characters in a zig-zag pattern across multiple rails, reading them row-by-row to produce ciphertext, and reversing the process for decryption.</li>
-              <li>To study and implement the <strong>Columnar Transposition Cipher</strong> (keyed transposition) by writing plaintext into a grid under a keyword, reading columns in alphabetical order of the keyword letters to produce ciphertext, and reversing the process for decryption.</li>
-            </ol>
+            <ul>
+              <li>To study and observe position-based rearrangement (permutations) in classical cryptography using the Rail Fence Cipher (keyless transposition) and the Columnar Transposition Cipher (keyed transposition).</li>
+              <li>To demonstrate how inverse permutations restore the original plaintext during decryption.</li>
+            </ul>
           </div>
         </section>
 

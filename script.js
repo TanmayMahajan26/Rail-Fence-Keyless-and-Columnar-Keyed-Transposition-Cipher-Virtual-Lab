@@ -6,7 +6,7 @@
 
 // Global State
 const state = {
-  theme: localStorage.getItem('vlab_theme') || 'dark',
+  theme: localStorage.getItem('vlab_theme') === 'dark' ? 'dark' : 'warm',
   activeTab: 'aim',
   simCipher: 'rf', // 'rf' or 'col'
   
@@ -84,7 +84,7 @@ function initTheme() {
   const toggleBtn = document.getElementById('themeToggleBtn');
   if (toggleBtn) {
     toggleBtn.addEventListener('click', () => {
-      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      state.theme = state.theme === 'dark' ? 'warm' : 'dark';
       document.documentElement.setAttribute('data-theme', state.theme);
       localStorage.setItem('vlab_theme', state.theme);
     });
